@@ -6,35 +6,35 @@
 
 #define MAX_CARS 5
 
-sem_t mutex, leftSem, rightSem;
-int leftCount = 0, rightCount = 0;
-bool leftCrossed[MAX_CARS] = {false};
-bool rightCrossed[MAX_CARS] = {false};
+sem_t mutex, LSem, RSem;
+int Lc = 0, Rc = 0;
+bool Lcross[MAX_CARS] = {false};
+bool Rcross[MAX_CARS] = {false};
 
 void passing(int dir, int id) {
     printf("Car %d from %s is crossing the bridge.\n", id, (dir == 0) ? "Left" : "Right");
-    sleep(1); // Simulating the time it takes to cross the bridge
+    sleep(1); 
     printf("Car %d from %s has crossed the bridge.\n", id, (dir == 0) ? "Left" : "Right");
 }
 
 void* left(void* args) {
     int id = *((int*)args);
     while (1) {
-        sem_wait(&leftSem);
+        sem_wait(&LSem);
         sem_wait(&mutex);
 
-        if (rightCount == 0 && leftCount < MAX_CARS && !leftCrossed[id - 1]) {
-            leftCount++;
+        if (Rc == 0 && Lc < MAX_CARS && !Lcross[id - 1]) {
+            Lc++;
             passing(0, id);
-            leftCount--;
-            leftCrossed[id - 1] = true;
+            Lc--;
+            Lcross[id - 1] = true;
         }
 
         sem_post(&mutex);
-        sem_post(&leftSem);
-        sleep(1); // Sleep to avoid immediate re-entry
+        sem_post(&LSem);
+        sleep(1); 
 
-        if (leftCrossed[id - 1]) {
+        if (Lcross[id - 1]) {
             break;
         }
     }
@@ -45,21 +45,21 @@ void* left(void* args) {
 void* right(void* args) {
     int id = *((int*)args);
     while (1) {
-        sem_wait(&rightSem);
+        sem_wait(&RSem);
         sem_wait(&mutex);
 
-        if (leftCount == 0 && rightCount < MAX_CARS && !rightCrossed[id - 1]) {
-            rightCount++;
+        if (Lc == 0 && Rc < MAX_CARS && !Rcross[id - 1]) {
+            Rc++;
             passing(1, id);
-            rightCount--;
-            rightCrossed[id - 1] = true;
+            Rc--;
+            Rcross[id - 1] = true;
         }
 
         sem_post(&mutex);
-        sem_post(&rightSem);
-        sleep(1); // Sleep to avoid immediate re-entry
+        sem_post(&RSem);
+        sleep(1); 
 
-        if (rightCrossed[id - 1]) {
+        if (Rcross[id - 1]) {
             break;
         }
     }
@@ -77,20 +77,20 @@ int main() {
     scanf("%d", &numRight);
 
     pthread_t leftThreads[numLeft], rightThreads[numRight];
-    int leftIds[numLeft], rightIds[numRight];
+    int Lid[numLeft], Rid[numRight];
 
     sem_init(&mutex, 0, 1);
-    sem_init(&leftSem, 0, MAX_CARS);
-    sem_init(&rightSem, 0, MAX_CARS);
+    sem_init(&LSem, 0, MAX_CARS);
+    sem_init(&RSem, 0, MAX_CARS);
 
     for (int i = 0; i < numLeft; ++i) {
-        leftIds[i] = i + 1;
-        pthread_create(&leftThreads[i], NULL, left, &leftIds[i]);
+        Lid[i] = i + 1;
+        pthread_create(&leftThreads[i], NULL, left, &Lid[i]);
     }
 
     for (int i = 0; i < numRight; ++i) {
-        rightIds[i] = i + 1;
-        pthread_create(&rightThreads[i], NULL, right, &rightIds[i]);
+        Rid[i] = i + 1;
+        pthread_create(&rightThreads[i], NULL, right, &Rid[i]);
     }
 
     for (int i = 0; i < numLeft; ++i) {
@@ -102,8 +102,8 @@ int main() {
     }
 
     sem_destroy(&mutex);
-    sem_destroy(&leftSem);
-    sem_destroy(&rightSem);
+    sem_destroy(&LSem);
+    sem_destroy(&RSem);
 
     return 0;
 }
