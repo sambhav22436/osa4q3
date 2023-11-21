@@ -55,23 +55,36 @@ void* right(void* args) {
 }
 
 int main() {
-    pthread_t leftThreads[MAX_CARS], rightThreads[MAX_CARS];
-    int leftIds[MAX_CARS], rightIds[MAX_CARS];
+    int numLeft, numRight;
+
+    printf("Enter the number of cars on the left side: ");
+    scanf("%d", &numLeft);
+
+    printf("Enter the number of cars on the right side: ");
+    scanf("%d", &numRight);
+
+    pthread_t leftThreads[numLeft], rightThreads[numRight];
+    int leftIds[numLeft], rightIds[numRight];
 
     sem_init(&mutex, 0, 1);
     sem_init(&leftSem, 0, MAX_CARS);
     sem_init(&rightSem, 0, MAX_CARS);
 
-    for (int i = 0; i < MAX_CARS; ++i) {
+    for (int i = 0; i < numLeft; ++i) {
         leftIds[i] = i + 1;
-        rightIds[i] = i + 1;
-
         pthread_create(&leftThreads[i], NULL, left, &leftIds[i]);
+    }
+
+    for (int i = 0; i < numRight; ++i) {
+        rightIds[i] = i + 1;
         pthread_create(&rightThreads[i], NULL, right, &rightIds[i]);
     }
 
-    for (int i = 0; i < MAX_CARS; ++i) {
+    for (int i = 0; i < numLeft; ++i) {
         pthread_join(leftThreads[i], NULL);
+    }
+
+    for (int i = 0; i < numRight; ++i) {
         pthread_join(rightThreads[i], NULL);
     }
 
