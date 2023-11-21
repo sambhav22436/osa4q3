@@ -3,6 +3,7 @@
 #include <semaphore.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 #define MAX_CARS 5
 
