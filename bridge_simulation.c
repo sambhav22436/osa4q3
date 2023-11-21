@@ -2,12 +2,14 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 #define MAX_CARS 5
 
 sem_t mutex, leftSem, rightSem;
 int leftCount = 0, rightCount = 0;
-int leftCrossed = 0, rightCrossed = 0;
+bool leftCrossed[MAX_CARS] = {false};
+bool rightCrossed[MAX_CARS] = {false};
 
 void passing(int dir, int id) {
     printf("Car %d from %s is crossing the bridge.\n", id, (dir == 0) ? "Left" : "Right");
@@ -21,22 +23,20 @@ void* left(void* args) {
         sem_wait(&leftSem);
         sem_wait(&mutex);
 
-        if (rightCount == 0 && leftCount < MAX_CARS) {
+        if (rightCount == 0 && leftCount < MAX_CARS && !leftCrossed[id - 1]) {
             leftCount++;
             passing(0, id);
             leftCount--;
-            leftCrossed++;
-
-            if (leftCrossed == MAX_CARS) {
-                sem_post(&mutex);
-                sem_post(&leftSem);
-                break;
-            }
+            leftCrossed[id - 1] = true;
         }
 
         sem_post(&mutex);
         sem_post(&leftSem);
         sleep(1); // Sleep to avoid immediate re-entry
+
+        if (leftCrossed[id - 1]) {
+            break;
+        }
     }
 
     return NULL;
@@ -48,22 +48,20 @@ void* right(void* args) {
         sem_wait(&rightSem);
         sem_wait(&mutex);
 
-        if (leftCount == 0 && rightCount < MAX_CARS) {
+        if (leftCount == 0 && rightCount < MAX_CARS && !rightCrossed[id - 1]) {
             rightCount++;
             passing(1, id);
             rightCount--;
-            rightCrossed++;
-
-            if (rightCrossed == MAX_CARS) {
-                sem_post(&mutex);
-                sem_post(&rightSem);
-                break;
-            }
+            rightCrossed[id - 1] = true;
         }
 
         sem_post(&mutex);
         sem_post(&rightSem);
         sleep(1); // Sleep to avoid immediate re-entry
+
+        if (rightCrossed[id - 1]) {
+            break;
+        }
     }
 
     return NULL;
@@ -109,3 +107,4 @@ int main() {
 
     return 0;
 }
+
