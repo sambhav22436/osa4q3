@@ -7,6 +7,7 @@
 
 sem_t mutex, leftSem, rightSem;
 int leftCount = 0, rightCount = 0;
+int leftCrossed = 0, rightCrossed = 0;
 
 void passing(int dir, int id) {
     printf("Car %d from %s is crossing the bridge.\n", id, (dir == 0) ? "Left" : "Right");
@@ -24,6 +25,13 @@ void* left(void* args) {
             leftCount++;
             passing(0, id);
             leftCount--;
+            leftCrossed++;
+
+            if (leftCrossed == MAX_CARS) {
+                sem_post(&mutex);
+                sem_post(&leftSem);
+                break;
+            }
         }
 
         sem_post(&mutex);
@@ -44,6 +52,13 @@ void* right(void* args) {
             rightCount++;
             passing(1, id);
             rightCount--;
+            rightCrossed++;
+
+            if (rightCrossed == MAX_CARS) {
+                sem_post(&mutex);
+                sem_post(&rightSem);
+                break;
+            }
         }
 
         sem_post(&mutex);
